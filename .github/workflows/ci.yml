@@ -93,6 +93,8 @@ jobs:
 
       - name: Build WASM
         run: cargo build --release --target wasm32v1-none -p prediction_market
+      - name: Report baseline WASM byte size
+        run: wc -c target/wasm32v1-none/release/prediction_market.wasm
 
   invariants:
     name: Cross-Contract Invariants
