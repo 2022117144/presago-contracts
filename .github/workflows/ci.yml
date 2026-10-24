@@ -91,8 +91,18 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
 
+      - name: Test WASM size gate
+        run: python3 -m unittest discover -s scripts -p 'test_check_wasm_size.py' -v
+
       - name: Build WASM
         run: cargo build --release --target wasm32v1-none -p prediction_market
+
+      # Initial project ceiling: 128 KiB (131072 bytes). Release settings use
+      # opt-level=z, LTO and stripped symbols; this guard prevents unbounded
+      # artifact growth. Revisit with measured headroom once main builds again;
+      # this is a project budget, not an asserted Soroban network limit.
+      - name: Enforce WASM size budget
+        run: python3 scripts/check_wasm_size.py
 
   invariants:
     name: Cross-Contract Invariants
