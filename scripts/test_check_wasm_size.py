@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 
-from check_wasm_size import BUDGET_BYTES
+from check_wasm_size import BUDGET_BYTES, DEFAULT_ARTIFACT
 
 SCRIPT = Path(__file__).with_name("check_wasm_size.py").resolve()
 
@@ -58,6 +58,30 @@ class WasmSizeTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 1)
         self.assertIn("prediction_market.wasm", result.stderr)
+
+    def test_ci_command_accepts_default_artifact(self):
+        artifact = Path(self.temp.name) / DEFAULT_ARTIFACT
+        artifact.parent.mkdir(parents=True)
+        # Synthetic bytes test path selection and size only, not Rust compilation.
+        artifact.write_bytes(b"\x00asm\x01\x00\x00\x00")
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT)], cwd=self.temp.name,
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("8 bytes /", result.stdout)
+
+    def test_ci_command_rejects_oversized_default_artifact(self):
+        artifact = Path(self.temp.name) / DEFAULT_ARTIFACT
+        artifact.parent.mkdir(parents=True)
+        with artifact.open("wb") as output:
+            output.truncate(BUDGET_BYTES + 1)
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT)], cwd=self.temp.name,
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("exceeds budget", result.stderr)
 
 
 if __name__ == "__main__":
