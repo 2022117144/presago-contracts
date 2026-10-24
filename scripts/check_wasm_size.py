@@ -4,9 +4,11 @@ import argparse
 from pathlib import Path
 import sys
 
-# Initial project ceiling, not a claim about a particular network's limits.
-# Update only alongside a measured release artifact and a reviewed rationale.
-BUDGET_BYTES = 128 * 1024
+# Measured release baseline: 89,469 bytes on the deduplicated upstream source
+# (GitHub Actions run 40087703845, Rust stable, release wasm32v1-none).
+# 96 KiB allows 8,835 bytes (~9.9%) headroom without silently permitting
+# growth to the 128 KiB Stellar mainnet configuration limit.
+BUDGET_BYTES = 96 * 1024
 DEFAULT_ARTIFACT = Path("target/wasm32v1-none/release/prediction_market.wasm")
 
 
